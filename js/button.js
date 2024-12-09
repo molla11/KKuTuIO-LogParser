@@ -1,9 +1,10 @@
+import { setLogContent } from "./logModule";
+
 const LogUploadBtn = document.getElementById("LogUploadBtn");
 const LogUploadDialog = document.getElementById("LogUploadDialog");
 
 LogUploadBtn.addEventListener("click", () => {
   LogUploadDialog.style.display = "block";
-  console.log(1);
 });
 
 const closeBtns = document.getElementsByClassName("closeBtn");
@@ -25,7 +26,7 @@ LogConfirmBtn.addEventListener("click", () => {
 
     reader.onload = function (event) {
       const logContent = event.target.result;
-      console.log(logContent);
+      setLogContent(logContent);
     };
 
     reader.readAsText(file);
