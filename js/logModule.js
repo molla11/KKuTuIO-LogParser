@@ -1,7 +1,7 @@
 let logContent = "";
 
-export const getLogContent = () => logContent;
+const getLogContent = () => logContent;
 
-export const setLogContent = (content) => {
+const setLogContent = (content) => {
   logContent = content;
 };
