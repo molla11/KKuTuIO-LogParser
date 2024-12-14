@@ -35,7 +35,7 @@ LogConfirmBtn.addEventListener("click", () => {
 
     closeClosestDialog(LogConfirmBtn);
 
-    setTimeout(() => parseLog(), 100);
+    setTimeout(() => lobby(), 100);
   } else {
     alert("파일을 선택하세요.");
   }

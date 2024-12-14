@@ -19,8 +19,9 @@
 
 @font-face {
   font-family: "NBGothic";
-  src: local("Nanum Barun Gothic"), local("NanumBarunGothic"), local("NanumBarunGothicOTF"), local("나눔바른고딕"), local("나눔바른고딕OTF"), url(font/NanumBarunGothic.eot) format("embedded-opentype"),
-    url(font/NanumBarunGothic.woff2) format("woff2"), url(font/NanumBarunGothic.woff) format("woff"), url(font/NanumBarunGothic.ttf) format("truetype");
+  src: local("Nanum Barun Gothic"), local("NanumBarunGothic"), local("NanumBarunGothicOTF"), local("나눔바른고딕"), local("나눔바른고딕OTF"),
+    url(font/NanumBarunGothic.eot) format("embedded-opentype"), url(font/NanumBarunGothic.woff2) format("woff2"), url(font/NanumBarunGothic.woff) format("woff"),
+    url(font/NanumBarunGothic.ttf) format("truetype");
 }
 
 body {
@@ -67,10 +68,6 @@ input:focus,
 textarea:focus,
 button:focus {
   outline: none;
-}
-
-span {
-  display: none;
 }
 
 .nav {

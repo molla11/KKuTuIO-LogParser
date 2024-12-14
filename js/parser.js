@@ -9,6 +9,10 @@ for (let i = 0; i < 1000; i++) {
 
 let waitingRoom = [];
 
+function lobby() {
+  parseLog();
+}
+
 function parseLog() {
   const data = getLogContent();
   const lines = data.split("\n");
@@ -25,9 +29,17 @@ function parseLog() {
             enterRoom(parsed.content.id, parsed.userId);
           } else {
             // else: 방 생성 기록
-            waitMatchingRoom(parsed.userId, parsed.content.title);
+            waitMatchingRoom(parsed.userId, parsed.content.title, parsed.time);
           }
           break;
+
+        case "talk":
+          if (parsed.roomNum == "로비") {
+            // 로비 채팅
+            addChatElement(parsed.userId, parsed.content.value, parsed.time);
+          } else {
+            // else: 방 채팅
+          }
 
         default:
           break;
@@ -74,67 +86,73 @@ function parse(line) {
     userId,
     content: JSON.parse(content),
   };
+}
 
-  function parseNotMsg(match) {
-    const [, time, location, hierarchy, logType, remains] = match;
+function parseNotMsg(match) {
+  const [, time, location, hierarchy, logType, remains] = match;
 
-    // 방 입장 로그
-    if (remains.slice(-10, remains.length) == "방에 입장했습니다.") {
-      const enterMatch = remains.match(/.*?\((.*?)\) 님이 (\d{1,3})번 방에 입장했습니다./);
-      return {
-        isMsg: false,
-        time,
-        serverName: location.replace(/\(손님\)/, ""),
-        isGuest: /\(손님\)/.test(location),
-        hierarchy,
-        logType,
-        roomNum: enterMatch[2],
-        userId: enterMatch[1],
-        content: {
-          type: "enter",
-        },
-      };
-    }
+  // 방 입장 로그
+  if (remains.slice(-10, remains.length) == "방에 입장했습니다.") {
+    const enterMatch = remains.match(/.*?\((.*?)\) 님이 (\d{1,3})번 방에 입장했습니다./);
+    return {
+      isMsg: false,
+      time,
+      serverName: location.replace(/\(손님\)/, ""),
+      isGuest: /\(손님\)/.test(location),
+      hierarchy,
+      logType,
+      roomNum: enterMatch[2],
+      userId: enterMatch[1],
+      content: {
+        type: "enter",
+      },
+    };
   }
 }
 
 function enterRoom(roomNum, userId) {
   if (roomCnt[roomNum] == 0) {
-    makeRoom(null, roomNum, userId, false);
+    makeRoom(null, null, roomNum, userId, false);
     return;
   }
 
   const room = rooms.get(roomName(roomNum));
-  room.members.push(userId);
+  room.members.add(userId);
+  const userCntEl = document.querySelector(`#room-${roomName(roomNum)} .rooms-limit`);
+  userCntEl.innerText = rooms.get(roomName(roomNum)).members.size + "명";
 }
 
-function makeRoom(roomTitle, roomNum, userId, logExist) {
+function makeRoom(time, roomTitle, roomNum, userId, logExist) {
   roomCnt[roomNum]++;
   console.log(roomTitle, userId, roomNum, roomCnt[roomNum], logExist);
+  const creator = logExist ? userId : null;
   rooms.set(roomName(roomNum), {
+    created: time,
+    creator,
     roomNum: roomNum,
     roomTitle,
-    members: [userId],
-    logExist,
+    members: new Set([userId]),
   });
+
+  addRoomElement(roomTitle, roomNum, creator, time);
 }
 
 function roomName(roomNum) {
   return roomNum + "-" + roomCnt[roomNum];
 }
 
-function waitMatchingRoom(userId, roomTitle) {
-  waitingRoom.push([userId, roomTitle]);
+function waitMatchingRoom(userId, roomTitle, time) {
+  waitingRoom.push([userId, roomTitle, time]);
 }
 
 function matchRoom(userId, roomNum) {
   if (waitingRoom.length == 0) {
-    if (roomCnt[roomNum] == 0) makeRoom(null, roomNum, userId, false);
+    if (roomCnt[roomNum] == 0) makeRoom(null, null, roomNum, userId, false);
     return false;
   } else {
     for (let i = 0; i < waitingRoom.length; i++) {
       if (waitingRoom[i][0] == userId) {
-        makeRoom(waitingRoom[i][1], roomNum, userId, true);
+        makeRoom(waitingRoom[i][2], waitingRoom[i][1], roomNum, userId, true);
         waitingRoom.splice(i, 1);
       }
     }
