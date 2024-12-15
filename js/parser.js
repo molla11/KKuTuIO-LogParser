@@ -2,15 +2,15 @@ const regex = /\[(.*?)\]\[([\w가-힣]+(?:\(손님\))?)-(MASTER|SLAVE-\d{1,2})\/
 const regexForMsg = /\[([\d\.]+)\] Room @(.*?) Msg #(.*?): ({.*})/;
 
 const rooms = new Map();
-let roomCnt = [];
-for (let i = 0; i < 1000; i++) {
-  roomCnt.push(0);
-}
-
 let waitingRoom = [];
+let lobbyChat = [];
 
-function lobby() {
-  parseLog();
+function initialize() {
+  rooms = new Map();
+  waitingRoom = [];
+  lobbyChat = [];
+
+  logContent = "";
 }
 
 function parseLog() {
@@ -26,7 +26,7 @@ function parseLog() {
         case "enter":
           if (parsed.content.hasOwnProperty("id")) {
             // id 속성 있음: 방 입장 기록 (생성 x)
-            enterRoom(parsed.content.id, parsed.userId);
+            enterRoom(parsed.content.id.toString(), parsed.userId);
           } else {
             // else: 방 생성 기록
             waitMatchingRoom(parsed.userId, parsed.content.title, parsed.time);
@@ -36,9 +36,12 @@ function parseLog() {
         case "talk":
           if (parsed.roomNum == "로비") {
             // 로비 채팅
-            addChatElement(parsed.userId, parsed.content.value, parsed.time);
+            saveChat(lobbyChat, "talk", parsed.userId, parsed.content.value, parsed.time);
           } else {
-            // else: 방 채팅
+            if (!rooms.has(parsed.roomNum)) makeRoom(null, null, parsed.roomNum, parsed.userId, false);
+            if (!rooms.get(parsed.roomNum).members.has(parsed.userId)) enterRoom(parsed.roomNum, parsed.userId);
+
+            saveChat(rooms.get(parsed.roomNum).chat, "relay" in parsed.content ? "relay" : "talk", parsed.userId, parsed.content.value, parsed.time);
           }
 
         default:
@@ -57,6 +60,13 @@ function parseLog() {
       }
     }
   }
+
+  loadRoomList();
+  loadChat("로비", lobbyChat);
+}
+
+function saveChat(chat, chatType, userId, value, time) {
+  chat.push([chatType, userId, value, time]);
 }
 
 function parse(line) {
@@ -111,34 +121,27 @@ function parseNotMsg(match) {
 }
 
 function enterRoom(roomNum, userId) {
-  if (roomCnt[roomNum] == 0) {
+  console.log(roomNum, userId);
+  if (!rooms.has(roomNum)) {
     makeRoom(null, null, roomNum, userId, false);
     return;
   }
 
-  const room = rooms.get(roomName(roomNum));
+  const room = rooms.get(roomNum);
   room.members.add(userId);
-  const userCntEl = document.querySelector(`#room-${roomName(roomNum)} .rooms-limit`);
-  userCntEl.innerText = rooms.get(roomName(roomNum)).members.size + "명";
 }
 
 function makeRoom(time, roomTitle, roomNum, userId, logExist) {
-  roomCnt[roomNum]++;
-  console.log(roomTitle, userId, roomNum, roomCnt[roomNum], logExist);
+  console.log(roomTitle, userId, roomNum, logExist);
   const creator = logExist ? userId : null;
-  rooms.set(roomName(roomNum), {
+  rooms.set(roomNum, {
     created: time,
     creator,
-    roomNum: roomNum,
+    roomNum,
     roomTitle,
     members: new Set([userId]),
+    chat: [],
   });
-
-  addRoomElement(roomTitle, roomNum, creator, time);
-}
-
-function roomName(roomNum) {
-  return roomNum + "-" + roomCnt[roomNum];
 }
 
 function waitMatchingRoom(userId, roomTitle, time) {
@@ -147,7 +150,7 @@ function waitMatchingRoom(userId, roomTitle, time) {
 
 function matchRoom(userId, roomNum) {
   if (waitingRoom.length == 0) {
-    if (roomCnt[roomNum] == 0) makeRoom(null, null, roomNum, userId, false);
+    if (!rooms.has(roomNum)) makeRoom(null, null, roomNum, userId, false);
     return false;
   } else {
     for (let i = 0; i < waitingRoom.length; i++) {

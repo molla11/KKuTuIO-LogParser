@@ -22,11 +22,13 @@ const LogConfirmBtn = document.getElementById("LogConfirmBtn");
 LogConfirmBtn.addEventListener("click", () => {
   const FileInput = document.getElementById("FileInput");
   const file = FileInput.files[0];
+  const roomListTitle = document.querySelector(".RoomListTitle");
+  roomListTitle.innerText = `Log | 방 목록 (${file.name})`;
 
   if (file) {
     const reader = new FileReader();
 
-    reader.onload = function (event) {
+    reader.onload = (event) => {
       const logContent = event.target.result;
       setLogContent(logContent);
     };
@@ -35,7 +37,10 @@ LogConfirmBtn.addEventListener("click", () => {
 
     closeClosestDialog(LogConfirmBtn);
 
-    setTimeout(() => lobby(), 100);
+    setTimeout(() => {
+      initialize();
+      parseLog();
+    }, 100);
   } else {
     alert("파일을 선택하세요.");
   }
